@@ -1,47 +1,22 @@
-# Source Code
+# Fleet360 Source
 
-Place all your project's source code in this folder.
+The current source is a dependency-free Python foundation for the Fleet360
+decision engine. It deliberately stops before implementing agents, correlation,
+optimization, UI, MCP, or LLM integration.
 
-## Structure Guidelines
-
-Organize your code logically. Here are common patterns — use whatever fits
-your project:
-
-### Web Application
-```
+```text
 src/
-  backend/        ← API server code
-  frontend/       ← UI code
-  shared/         ← Shared utilities/types
+  fleet360/
+    domain.py       # Validated operational models and agent event contract
+    config.py       # Environment-backed local settings
+  data/
+    fleet360_demo.json  # Small synthetic shipments and agent events
+  .env.example
+tests/
+  test_domain.py
 ```
 
-### Data / AI Project
-```
-src/
-  data/           ← Data ingestion / preprocessing
-  models/         ← ML model code
-  api/            ← Serving layer
-  notebooks/      ← Jupyter notebooks (exploration)
-```
-
-### CLI / Script-based Tool
-```
-src/
-  cli/            ← CLI entry points
-  lib/            ← Core logic
-  utils/          ← Helpers
-```
-
-## Important Files to Include
-
-- `requirements.txt` or `package.json` — dependency manifest
-- `.env.example` — template for environment variables (NEVER commit `.env`)
-- Any database migration files
-- Configuration files
-
-## What NOT to Include in src/
-
-- `.env` files with real secrets
-- Large binary files (use Git LFS or link externally)
-- `node_modules/` or `venv/` (these are in `.gitignore`)
-- Build artifacts (`dist/`, `build/`, `__pycache__/`)
+The domain models are standard-library dataclasses with explicit validation and
+`to_dict()` serialization. Keeping the contract dependency-free makes it easy
+for future agents and adapters to share the same types before a persistence or
+API layer is selected.

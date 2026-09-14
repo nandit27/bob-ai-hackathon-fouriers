@@ -1,79 +1,122 @@
 # Setup Guide
 
-> **This file is read by the automated evaluation pipeline. Be precise and complete.**
+> This guide describes the current foundation only. No external services or
+> credentials are required yet.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- [ ] [e.g., Python 3.11+]
-- [ ] [e.g., Node.js 18+]
-- [ ] [e.g., Docker Desktop]
-- [ ] [e.g., An IBM Cloud account with watsonx.ai access]
+- Python 3.11 or newer
+- Git
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+The template lives at `src/.env.example`. Copy it to `src/.env` only for local
+development; the current code reads values exported by the shell and does not
+load `.env` files automatically.
 
 ```bash
-cp .env.example .env
+cp src/.env.example src/.env
 ```
 
-| Variable | Description | Required |
+| Variable | Description | Default |
 |---|---|---|
-| `WATSONX_API_KEY` | Your IBM watsonx.ai API key | Yes |
-| `WATSONX_PROJECT_ID` | Your watsonx.ai project ID | Yes |
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `SLACK_WEBHOOK_URL` | Slack webhook for alerts | No |
+| `APP_ENV` | Local application environment name | `development` |
+| `APP_PORT` | Reserved local application port | `8000` |
+| `FLEET360_DATA_DIR` | Location of synthetic and future local data | `src/data` |
 
 ## Installation
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/[your-org]/[your-repo].git
-cd [your-repo]
-
-# 2. Install backend dependencies
-[your command — e.g.: pip install -r requirements.txt]
-
-# 3. Install frontend dependencies (if applicable)
-[your command — e.g.: cd frontend && npm install]
-
-# 4. Set up the database (if applicable)
-[your command — e.g.: python manage.py migrate]
-```
-
-## Running the Application
+Create a virtual environment and install the backend dependencies:
 
 ```bash
-# Start the backend
-[your command — e.g.: uvicorn app.main:app --reload]
-
-# Start the frontend (in a separate terminal, if applicable)
-[your command — e.g.: cd frontend && npm run dev]
+python -m venv .venv
+# macOS/Linux
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-The application will be available at: `http://localhost:[PORT]`
+## Running the Backend
+
+Start the FastAPI development server from the repository root:
+
+```bash
+python -m uvicorn src.fleet360.api:app --reload --host 127.0.0.1 --port 8000
+```
+
+The API is available at `http://127.0.0.1:8000`. Check its health in a second
+terminal:
+
+```bash
+curl http://127.0.0.1:8000/api/health
+```
+
+Expected response:
+
+```json
+{"status":"ok","synthetic_data":true,"service":"fleet360-backend"}
+```
+
+Weather impact assessments are available from the synthetic disruption data:
+
+```bash
+curl http://127.0.0.1:8000/api/weather/assessments/DIS-001
+curl http://127.0.0.1:8000/api/weather/assessments
+curl http://127.0.0.1:8000/api/weather/impacts/DIS-001
+curl http://127.0.0.1:8000/api/weather/shipments/SHP-1001
+curl http://127.0.0.1:8000/api/weather/events/DIS-001
+```
+
+The weather endpoints return derived shipment impacts and the standardized
+weather-agent event for the Mumbai flooding event. The data is synthetic and
+the weather agent does not call an external weather API yet.
+
+## Running the Frontend
+
+In a second terminal, start the React dashboard from `src/frontend`:
+
+```powershell
+cd src/frontend
+npm install
+npm run dev -- --host 127.0.0.1
+```
+
+Open `http://127.0.0.1:5173/dashboard`. The dashboard reads the FastAPI
+backend, including weather impact endpoints, and labels the operational data as
+synthetic. To build the frontend for a production bundle:
+
+```powershell
+cd src/frontend
+npm run build
+```
 
 ## Running Tests
 
-```bash
-[your test command — e.g.: pytest tests/ -v]
-```
-
-## Quick Demo (Optional)
-
-If you have a demo script or sample data to showcase the project quickly:
+From the repository root:
 
 ```bash
-[e.g.: python demo/seed_demo_data.py]
-[e.g.: open http://localhost:8000/demo]
+python -m unittest discover -s tests -v
 ```
+
+On Windows PowerShell, the equivalent command is the same. To exercise the
+configuration reader with a custom port:
+
+```powershell
+$env:APP_PORT = "8100"
+python -c "from src.fleet360.config import AppSettings; print(AppSettings.from_environment())"
+```
+
+## Current Runtime Surface
+
+The backend is a read-only POC API over the synthetic fixture at
+`src/data/fleet360_demo.json`. It does not use live logistics data or a
+database. Agents, correlation, optimization, frontend, MCP, and LLM
+integration will be added incrementally.
 
 ## Troubleshooting
 
 | Issue | Solution |
 |---|---|
-| [e.g., `ModuleNotFoundError`] | [e.g., Run `pip install -r requirements.txt` again] |
-| [e.g., Database connection refused] | [e.g., Ensure PostgreSQL is running: `docker compose up db`] |
-| [e.g., watsonx.ai 401 error] | [e.g., Check `WATSONX_API_KEY` in your `.env` file] |
+| `ModuleNotFoundError` when importing from a custom script | Run the script from the repository root and import from `src.fleet360`. |
+| `APP_PORT must be an integer` | Set `APP_PORT` to a whole number between 1 and 65535. |
+| Tests are not discovered | Run `python -m unittest discover -s tests -v` from the repository root. |
