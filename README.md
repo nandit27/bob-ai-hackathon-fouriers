@@ -8,7 +8,7 @@
 
 | Field | Value |
 |---|---|
-| **Team Name** | Fourtiers |
+| **Team Name** | Fouriers |
 | **Track** | AI |
 | **Team Lead** | Nandit Kalaria — nanditkalaria27@gmail.com |
 | **Members** | Dhairya Kanabar, Sarah Kamdar, Naseta Delawala |
