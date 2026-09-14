@@ -9,7 +9,7 @@
 # =============================================================================
 
 team:
-  name: "Fourtiers"                             # REQUIRED — e.g., "Orion Squad"
+  name: "Fouriers"                             # REQUIRED — e.g., "Orion Squad"
   track: "AI"                            # REQUIRED — one of: AI | DevOps | Sustainability | Open
   lead:
     name: "Nandit Kalaria"                           # REQUIRED — e.g., "Alice Chen"
