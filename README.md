@@ -1,4 +1,4 @@
-# 🚀 [Your Project Title Here]
+# 🚀 Fleet360
 
 > ⚠️ **Replace everything in `[ ]` brackets with your actual content before submission.**
 
@@ -8,10 +8,10 @@
 
 | Field | Value |
 |---|---|
-| **Team Name** | [Your Team Name] |
-| **Track** | [AI / DevOps / Sustainability / Open] |
-| **Team Lead** | [Name] — [email@ibm.com] |
-| **Members** | [Name 1], [Name 2], [Name 3] |
+| **Team Name** | Fourtiers |
+| **Track** | AI |
+| **Team Lead** | Nandit Kalaria — nanditkalaria27@gmail.com |
+| **Members** | Dhairya Kanabar, Sarah Kamdar, Naseta Delawala |
 
 ---
 
@@ -19,7 +19,7 @@
 
 > In 2–3 sentences: What problem does your project solve? Who experiences this problem?
 
-[Describe the real-world problem your project addresses. Be specific about who the user is and what pain point they face.]
+Supply chain operators must manage vehicles, shipments, routes, delivery deadlines, and fleet availability while disruptions such as weather events, port strikes, and geopolitical crises can rapidly affect active shipments. Operators often need to connect vehicle locations, route conditions, shipment requirements, fleet availability, and cold-chain sensor data to determine what is affected and what action should be taken, while temperature-sensitive cargo can be at risk when excursions are detected too late.
 
 ---
 
@@ -27,17 +27,22 @@
 
 > In 2–3 sentences: What did you build? How does it solve the problem above?
 
-[Describe your solution clearly. Explain the core mechanism — what makes it work.]
+Fleet360 is an AI-powered fleet and supply chain operations assistant that combines real-time fleet visibility with specialized AI agents for disruption and cold-chain monitoring. It identifies affected shipments, recommends alternative routes or carriers, finds suitable idle fleet assets for redeployment, detects temperature excursions, and provides actionable recommendations and alerts to operators.
+
 
 ---
 
 ## ✨ Key Features
 
-- **Feature 1:** [Brief description — e.g., "Real-time anomaly detection using watsonx.ai"]
-- **Feature 2:** [Brief description]
-- **Feature 3:** [Brief description]
-- **Feature 4:** [Optional]
-- **Feature 5:** [Optional]
+- **Disruption Impact Analysis:** Analyzes weather and other disruption signals to identify shipments and fleet operations that may be affected.
+
+- **AI-Powered Route & Carrier Recommendations:** Recommends alternative routes or carrier options while considering vehicle capacity, traffic conditions, and delivery time windows.
+
+- **Intelligent Fleet Redeployment:** Identifies suitable idle vehicles and matches them with disrupted or high-priority shipments based on location, availability, capacity, and requirements.
+
+- **Cold-Chain Monitoring:** Processes IoT temperature data to detect temperature excursions and classify their severity before delivery.
+
+- **Real-Time Fleet Visibility & Alerts:** Provides GPS-based vehicle tracking, geofencing, operational dashboards, and prioritized alerts to help operators respond to exceptions quickly.
 
 ---
 
