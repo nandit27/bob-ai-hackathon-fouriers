@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip } from "react-leaflet";
+import { MapContainer, Marker, Polyline, TileLayer } from "react-leaflet";
 import type { Alternate, Disruption, Shipment, Vehicle } from "../types";
 
 export const CITY_COORDS: Record<string, [number, number]> = {
@@ -44,10 +44,24 @@ export function speedFor(vehicleId: string): number {
   return 34 + (hash % 32);
 }
 
+function vehicleIcon(status: string, vehicleId: string, selected: boolean, showLabel: boolean, speed: number) {
+  const color = status === "active" ? "#22c55e" : status === "idle" ? "#f59e0b" : "#94a3b8";
+  const ring = selected ? `box-shadow:0 0 0 3px ${color}40;` : "";
+  const label = showLabel ? `<span class="fleet-tip-label">${vehicleId} ${status === "active" ? `${speed} km/h` : "idle"}</span>` : "";
+  return L.divIcon({
+    className: "fleet-vehicle-marker",
+    html: `<span class="fleet-dot" style="background:${color};width:${selected ? 16 : 12}px;height:${selected ? 16 : 12}px;${ring}"></span>${label}`,
+    iconSize: [selected ? 16 : 12, selected ? 16 : 12],
+    iconAnchor: [selected ? 8 : 6, selected ? 8 : 6],
+  });
+}
+
 function disruptionIcon(severity: string) {
+  const colors: Record<string, string> = { critical: "#dc2626", high: "#ea580c", medium: "#d97706", low: "#16a34a" };
+  const bg = colors[severity.toLowerCase()] ?? "#64748b";
   return L.divIcon({
     className: "fleet-alert-marker",
-    html: `<span class="fleet-alert-box" data-sev="${severity.toLowerCase()}">!</span>`,
+    html: `<span class="fleet-alert-box" style="background:${bg};border-color:${bg}">!</span>`,
     iconSize: [22, 22],
     iconAnchor: [11, 11],
   });
@@ -75,33 +89,26 @@ export function FleetMap({ shipments, fleet, disruptions, visibleVehicleIds, sel
         const points = shipment.route.map(coordsFor).filter((p): p is [number, number] => p !== null);
         if (points.length < 2) return null;
         const emphasized = !selectedDisruptionId || affectedShipmentIds.has(shipment.shipment_id);
-        return <Polyline key={shipment.shipment_id} positions={points} pathOptions={{ color: "#000", weight: emphasized ? 3 : 1, opacity: emphasized ? 0.85 : 0.25 }} />;
+        return <Polyline key={shipment.shipment_id} positions={points} pathOptions={{ color: emphasized ? "#2563eb" : "#94a3b8", weight: emphasized ? 2.5 : 1, opacity: emphasized ? 0.7 : 0.2 }} />;
       })}
       {fleet.map((vehicle, index) => {
         if (visibleVehicleIds && !visibleVehicleIds.has(vehicle.vehicle_id)) return null;
         const base = coordsFor(vehicle.current_location);
         if (!base) return null;
         const point: [number, number] = [base[0] + (index % 5) * 0.09, base[1] + (index % 7) * 0.09];
-        const moving = vehicle.status === "active";
         const selected = vehicle.vehicle_id === selectedVehicleId;
+        const speed = speedFor(vehicle.vehicle_id);
         return (
-          <CircleMarker
+          <Marker
             key={vehicle.vehicle_id}
-            center={point}
-            radius={selected ? 11 : 8}
-            pathOptions={{ color: "#000", weight: selected ? 3 : 2, fillColor: moving ? "#000" : "#fff", fillOpacity: 1 }}
+            position={point}
+            icon={vehicleIcon(vehicle.status, vehicle.vehicle_id, selected, showLabels, speed)}
             eventHandlers={{ click: () => onVehicleClick(vehicle.vehicle_id) }}
-          >
-            {showLabels && (
-              <Tooltip permanent direction="top" offset={[0, -10]} className="fleet-tip">
-                {vehicle.vehicle_id} {moving ? `${speedFor(vehicle.vehicle_id)} km/h` : "idle"}
-              </Tooltip>
-            )}
-          </CircleMarker>
+          />
         );
       })}
       {previewPoints.length >= 2 && (
-        <Polyline key={previewAlt?.alternate_id} positions={previewPoints} pathOptions={{ color: "#000", weight: 5, opacity: 1, dashArray: "10 6" }} />
+        <Polyline key={previewAlt?.alternate_id} positions={previewPoints} pathOptions={{ color: "#2563eb", weight: 4, opacity: 0.9, dashArray: "10 6" }} />
       )}
       {disruptions.map((disruption) => {
         const point = coordsFor(disruption.location.replace(" Port", ""));
