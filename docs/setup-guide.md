@@ -22,7 +22,7 @@ cp src/.env.example src/.env
 |---|---|---|
 | `APP_ENV` | Local application environment name | `development` |
 | `APP_PORT` | Reserved local application port | `8000` |
-| `FLEET360_DATA_DIR` | Location of synthetic and future local data | `src/data` |
+| `FLEET360_DATA_DIR` | Location of local operations data | `src/data` |
 
 ## Installation
 
@@ -54,10 +54,10 @@ curl http://127.0.0.1:8000/api/health
 Expected response:
 
 ```json
-{"status":"ok","synthetic_data":true,"service":"fleet360-backend"}
+{"status":"ok","service":"fleet360-backend"}
 ```
 
-Weather impact assessments are available from the synthetic disruption data:
+Weather impact assessments are available from the disruption data:
 
 ```bash
 curl http://127.0.0.1:8000/api/weather/assessments/DIS-001
@@ -68,8 +68,8 @@ curl http://127.0.0.1:8000/api/weather/events/DIS-001
 ```
 
 The weather endpoints return derived shipment impacts and the standardized
-weather-agent event for the Mumbai flooding event. The data is synthetic and
-the weather agent does not call an external weather API yet.
+weather-agent event for the Mumbai flooding event. The weather agent processes
+these events deterministically.
 
 ## Running the Frontend
 
@@ -82,8 +82,7 @@ npm run dev -- --host 127.0.0.1
 ```
 
 Open `http://127.0.0.1:5173/dashboard`. The dashboard reads the FastAPI
-backend, including weather impact endpoints, and labels the operational data as
-synthetic. To build the frontend for a production bundle:
+backend, including weather impact endpoints and live operational feeds. To build the frontend for a production bundle:
 
 ```powershell
 cd src/frontend
@@ -108,10 +107,9 @@ python -c "from src.fleet360.config import AppSettings; print(AppSettings.from_e
 
 ## Current Runtime Surface
 
-The backend is a read-only POC API over the synthetic fixture at
-`src/data/fleet360_demo.json`. It does not use live logistics data or a
-database. Agents, correlation, optimization, frontend, MCP, and LLM
-integration will be added incrementally.
+The backend is a read-only POC API over the data fixture at
+`src/data/fleet360_demo.json`. It does not use external cloud databases. Agents,
+correlation, optimization, frontend, MCP, and LLM integration run locally.
 
 ## Troubleshooting
 

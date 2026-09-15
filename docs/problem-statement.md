@@ -2,20 +2,20 @@
 
 ## Background
 
-[Describe the broader context. What domain or industry does this problem belong to? What situation creates the problem?]
+Supply chain operators manage vehicles, shipments, routes, and deliveries. Disruptions such as extreme weather, port strikes, and geopolitical events can quickly affect active shipments, causing delays and cargo spoilage.
 
 ## The Problem
 
-[State the problem clearly and specifically. Avoid vague statements like "things are slow" — instead say "Operations teams spend an average of 45 minutes per incident diagnosing pipeline failures because logs are scattered across 6 different tools."]
+Operations teams spend significant time manually correlating disruptions with shipments, locating idle vehicles, and determining remedial actions. Lack of integrated visibility leads to delayed responses and increased costs.
 
 ## Who is Affected
 
-[Describe the specific user or persona experiencing this problem. Be concrete — not "developers" but "backend engineers managing CI/CD pipelines in enterprises with 50+ microservices."]
+Field logistics managers, dispatch coordinators, and cold‑chain supervisors in large enterprises that operate multimodal freight networks.
 
 ## Why It Matters
 
-[What is the cost of this problem? Lost time? Revenue? Safety risk? Frustration? Quantify if possible.]
+Each hour of delay can increase penalty costs, reduce customer satisfaction, and risk spoilage of temperature‑sensitive goods, directly impacting revenue and compliance.
 
 ## Why Existing Solutions Fall Short
 
-[Briefly explain what people currently do and why it doesn't fully solve the problem. This sets up why your solution is needed.]
+Current tools provide siloed tracking or generic alerts but do not combine real‑time fleet data, disruption intelligence, and automated recommendation generation in a single workflow.

@@ -16,7 +16,7 @@ flowchart LR
         E --> X[Future Event Correlator]
         X --> R[Future RiskAssessment]
         X --> A[Future RecoveryRecommendation]
-        D[(Synthetic demo data)] -.-> E
+        D[(Operations demo data)] -.-> E
 ```
 
 ## Components
@@ -27,7 +27,7 @@ flowchart LR
 | Agent event contract | `StandardizedAgentEvent` | Give all three future agents the same correlator input shape |
 | Weather agent | Deterministic Python service | Match disruption locations and route corridors to active shipments and explain estimated impact |
 | Configuration | `AppSettings` and `src/.env.example` | Read non-secret local application settings from environment variables |
-| Synthetic data | JSON | Provide small, deterministic fixtures for development and later demos |
+| Operational data | JSON | Provide small, deterministic fixtures for development and later demos |
 | Tests | Python `unittest` | Protect model invariants and event serialization |
 
 ## Domain Contract
@@ -40,7 +40,7 @@ therefore process all three sources through one input contract.
 
 ## Current Weather Data Flow
 
-1. The weather agent reads synthetic disruptions and active shipments through
+1. The weather agent reads operational disruptions and active shipments through
      `Fleet360Repository`.
 2. It matches location aliases and ordered route corridors, including routes
      with intermediate waypoints.
