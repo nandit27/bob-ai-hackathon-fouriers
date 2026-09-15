@@ -36,13 +36,40 @@ def save_state(state: dict[str, Any]) -> None:
         json.dump(state, fh, indent=2)
 
 
+def _narrate_recommendation(rec: dict[str, Any]) -> str:
+    """Use IBM watsonx.ai Granite to generate a natural-language description.
+
+    Returns the Granite-generated narration, or falls back to the existing
+    template string already set on the recommendation dict.
+    """
+    from .watsonx import granite_generate  # local import
+
+    prompt = f"""You are Fleet360 AI, a supply chain operations assistant powered by IBM watsonx.ai.
+Write a clear, actionable one-sentence recommendation for an operator.
+Be concise (max 40 words), professional, and cite the specific IDs given.
+
+Recommendation type: {rec.get('recommendation_type', '').replace('_', ' ').upper()}
+Shipment: {rec.get('shipment_id')}
+Priority: P{rec.get('priority', 2)}
+Context: {rec.get('description', '')}
+
+ONE-SENTENCE RECOMMENDATION:"""
+
+    narration = granite_generate(prompt, max_tokens=60)
+    return narration if narration else rec.get("description", "")
+
+
 def build_recommendations(
     impacts: list[dict[str, Any]],
     shipments: list[dict[str, Any]],
     idle_vehicles: list[dict[str, Any]],
     excursion_shipment_ids: list[str],
 ) -> list[dict[str, Any]]:
-    """Hardcoded recommendation builder. Flow-ready, not ML."""
+    """Recommendation builder with IBM watsonx.ai Granite narration.
+
+    Each recommendation description is narrated by Granite when watsonx.ai
+    is configured; falls back to template strings when it is not.
+    """
     by_shipment = {s["shipment_id"]: s for s in shipments}
     recs: list[dict[str, Any]] = []
     seq = 1
@@ -116,6 +143,10 @@ def build_recommendations(
             "status": "pending",
         })
         seq += 1
+
+    # Narrate each recommendation via IBM watsonx.ai Granite (falls back silently)
+    for rec in recs:
+        rec["description"] = _narrate_recommendation(rec)
 
     return recs[:12]
 
@@ -314,8 +345,8 @@ def build_alternatives(
     }
 
 
-def answer_question(question: str, context: dict[str, Any]) -> dict[str, Any]:
-    """Rule-based hardcoded assistant. Matches keywords, cites real IDs."""
+def _answer_question_fallback(question: str, context: dict[str, Any]) -> dict[str, Any]:
+    """Rule-based fallback assistant. Used when watsonx.ai is unavailable."""
     q = question.lower()
     shipments = context.get("shipments", [])
     impacts = context.get("impacts", [])
@@ -342,3 +373,67 @@ def answer_question(question: str, context: dict[str, Any]) -> dict[str, Any]:
         return {"answer": "4 active disruptions: DIS-001 Mumbai flooding (HIGH), DIS-002 port restriction (HIGH), DIS-003 Ahmedabad closure (MEDIUM), DIS-004 Hyderabad traffic (LOW).", "cited_ids": ["DIS-001", "DIS-002", "DIS-003", "DIS-004"]}
     top = [s["shipment_id"] for s in shipments[:3]]
     return {"answer": f"Fleet360 POC tracks {len(shipments)} shipments, {len(impacts)} weather impacts, {len(idle)} idle vehicles. Ask about critical shipments, Mumbai disruption, cold chain, or redeploy options.", "cited_ids": top}
+
+
+def _build_assistant_prompt(question: str, context: dict[str, Any]) -> str:
+    """Build a structured prompt for Granite from live fleet context."""
+    shipments = context.get("shipments", [])
+    impacts = context.get("impacts", [])
+    idle = context.get("idle", [])
+    excursions = context.get("excursions", [])
+
+    critical_impacts = [i for i in impacts if i.get("impact_level") in ("CRITICAL", "HIGH")]
+    idle_summary = ", ".join(
+        f"{v['vehicle_id']} ({v.get('vehicle_type','?')}, {v.get('capacity','?')} kg, {v.get('current_location','?')}{'[REEFER]' if v.get('refrigerated') else ''})"
+        for v in idle[:5]
+    ) or "none"
+    impact_summary = ", ".join(
+        f"{i['shipment_id']} via {i['disruption_id']} [{i.get('impact_level','?')}, +{i.get('estimated_delay_hours',0)}h]"
+        for i in critical_impacts[:6]
+    ) or "none"
+    excursion_summary = ", ".join(excursions) or "none"
+
+    return f"""You are Fleet360 AI, an intelligent supply chain operations assistant powered by IBM watsonx.ai.
+Answer the operator's question concisely and accurately using only the live fleet data provided below.
+Be specific — cite shipment IDs, vehicle IDs, and disruption IDs in your answer.
+Do not invent data not present in the context. Keep the answer under 80 words.
+
+LIVE FLEET CONTEXT:
+- Total shipments tracked: {len(shipments)}
+- Active weather/disruption impacts (CRITICAL/HIGH): {impact_summary}
+- Cold-chain excursions: {excursion_summary}
+- Idle vehicles available for redeployment: {idle_summary}
+
+OPERATOR QUESTION: {question}
+
+ANSWER:"""
+
+
+def answer_question(question: str, context: dict[str, Any]) -> dict[str, Any]:
+    """Answer operator questions using IBM watsonx.ai Granite LLM.
+
+    Falls back to deterministic rule-based logic if watsonx.ai is not
+    configured or the API call fails — the app always returns a response.
+    """
+    from .watsonx import granite_generate  # local import to avoid circular deps
+
+    # Collect cited IDs for the response envelope
+    impacts = context.get("impacts", [])
+    idle = context.get("idle", [])
+    excursions = context.get("excursions", [])
+    cited: list[str] = (
+        [i["shipment_id"] for i in impacts if i.get("impact_level") in ("CRITICAL", "HIGH")][:4]
+        + [v["vehicle_id"] for v in idle[:2]]
+        + excursions[:2]
+    )
+
+    # Try IBM watsonx.ai Granite first
+    prompt = _build_assistant_prompt(question, context)
+    granite_answer = granite_generate(prompt, max_tokens=150)
+    if granite_answer:
+        return {"answer": granite_answer, "cited_ids": cited, "powered_by": "ibm/granite-13b-instruct-v2"}
+
+    # Graceful fallback — rule-based logic, no user-visible error
+    result = _answer_question_fallback(question, context)
+    result["powered_by"] = "fallback"
+    return result

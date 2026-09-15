@@ -2,8 +2,25 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+# Load .env from src/.env if present (local dev only — never committed)
+_env_path = Path(__file__).parents[1] / ".env"
+if _env_path.exists():
+    try:
+        from dotenv import load_dotenv  # type: ignore
+        load_dotenv(_env_path)
+    except ImportError:
+        # python-dotenv not installed — manually parse key=value lines
+        for line in _env_path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
 
 from .api_models import (
     ActionCreate,

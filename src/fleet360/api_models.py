@@ -182,6 +182,7 @@ class AssistantAskRequest(ApiModel):
 class AssistantAskResponse(ApiModel):
     answer: str
     cited_ids: list[str]
+    powered_by: str = "fallback"
 
 
 class RouteStatsResponse(ApiModel):
