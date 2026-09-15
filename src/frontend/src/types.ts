@@ -88,3 +88,63 @@ export type DetailSelection =
   | { kind: "shipment"; item: Shipment }
   | { kind: "disruption"; item: Disruption }
   | null;
+
+export type Recommendation = {
+  recommendation_id: string;
+  shipment_id: string;
+  disruption_id: string | null;
+  recommendation_type: string;
+  priority: number;
+  title: string;
+  description: string;
+  suggested_vehicle_id: string | null;
+  estimated_delay_hours: number;
+  status: string;
+};
+
+export type ActionRecord = {
+  action_id: string;
+  action_type: string;
+  shipment_id: string;
+  vehicle_id: string | null;
+  recommendation_id: string | null;
+  note: string | null;
+  created_at: string;
+  status: string;
+};
+
+export type AlertRecord = {
+  alert_id: string;
+  severity: string;
+  title: string;
+  detail: string;
+  shipment_id: string | null;
+  disruption_id: string | null;
+  acknowledged: boolean;
+};
+
+export type PageKey = "livemap" | "dashboard" | "vehicles" | "drivers" | "jobs" | "routes" | "geofences" | "alerts" | "reports" | "settings";
+
+export type Alternate = {
+  alternate_id: string;
+  name: string;
+  waypoints: string[];
+  distance_km: number;
+  time_h: number;
+  fuel_l: number;
+  extra_km: number;
+  extra_time_h: number;
+  extra_fuel_l: number;
+  extra_cost_rs: number;
+  avoids_disruption: boolean;
+  delay_avoided_h: number;
+};
+
+export type Alternatives = {
+  shipment_id: string;
+  primary: { waypoints: string[]; distance_km: number; time_h: number; fuel_l: number };
+  disruption_id: string | null;
+  alternatives: Alternate[];
+};
+
+export type PreviewAlt = { shipment_id: string; alt: Alternate } | null;

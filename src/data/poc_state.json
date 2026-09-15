@@ -1,0 +1,27 @@
+{
+  "actions": [
+    {
+      "action_id": "ACT-001",
+      "action_type": "reroute",
+      "shipment_id": "SHP-1001",
+      "vehicle_id": "VH-001",
+      "recommendation_id": null,
+      "note": "Reroute via Via Thane bypass (ALT-SHP-1001-A)",
+      "created_at": "2026-09-15T06:22:13.074606+00:00",
+      "status": "logged"
+    },
+    {
+      "action_id": "ACT-002",
+      "action_type": "reroute",
+      "shipment_id": "SHP-1010",
+      "vehicle_id": "VH-010",
+      "recommendation_id": null,
+      "note": "Reroute via Via Hosur bypass (ALT-SHP-1010-A)",
+      "created_at": "2026-09-15T06:37:09.837756+00:00",
+      "status": "logged"
+    }
+  ],
+  "acked_alerts": [
+    "ALERT-DIS-001-SHP-1001"
+  ]
+}

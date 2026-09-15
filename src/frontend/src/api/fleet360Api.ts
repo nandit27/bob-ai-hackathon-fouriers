@@ -1,9 +1,12 @@
-import type { Disruption, Shipment, TemperatureLog, Vehicle, WeatherEvent, WeatherImpact } from "../types";
+import type { ActionRecord, AlertRecord, Alternatives, Disruption, Recommendation, Shipment, TemperatureLog, Vehicle, WeatherEvent, WeatherImpact } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
   if (!response.ok) {
     throw new Error(`Fleet 360 backend returned ${response.status}`);
   }
@@ -22,4 +25,12 @@ export const fleet360Api = {
   getWeatherImpacts: (disruptionId: string) => request<WeatherImpact[]>(`/api/weather/impacts/${disruptionId}`),
   getWeatherShipments: (shipmentId: string) => request<WeatherImpact[]>(`/api/weather/shipments/${shipmentId}`),
   getWeatherEvent: (disruptionId: string) => request<WeatherEvent>(`/api/weather/events/${disruptionId}`),
+  getRecommendations: () => request<Recommendation[]>("/api/recommendations"),
+  getActions: () => request<ActionRecord[]>("/api/actions"),
+  createAction: (body: { action_type: string; shipment_id: string; vehicle_id?: string | null; recommendation_id?: string | null; note?: string | null }) =>
+    request<ActionRecord>("/api/actions", { method: "POST", body: JSON.stringify(body) }),
+  getAlternates: (shipmentId: string) => request<Alternatives>(`/api/routes/alternatives/${shipmentId}`),
+  getAlerts: () => request<AlertRecord[]>("/api/alerts"),
+  ackAlert: (alert_id: string) => request<AlertRecord>("/api/alerts/ack", { method: "POST", body: JSON.stringify({ alert_id }) }),
+  askAssistant: (question: string) => request<{ answer: string; cited_ids: string[] }>("/api/assistant/ask", { method: "POST", body: JSON.stringify({ question }) }),
 };

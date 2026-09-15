@@ -6,9 +6,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api_models import (
+    ActionCreate,
+    ActionResponse,
+    AlertAckRequest,
+    AlertResponse,
+    AlternativesResponse,
+    AssistantAskRequest,
+    AssistantAskResponse,
     DisruptionResponse,
     ErrorResponse,
     HealthResponse,
+    RecommendationResponse,
     ShipmentResponse,
     TemperatureLogResponse,
     VehicleResponse,
@@ -16,6 +24,7 @@ from .api_models import (
     StandardizedEventResponse,
     WeatherAssessmentResponse,
 )
+from .poc import answer_question, build_alerts, build_alternatives, build_recommendations, load_state, save_state, _utcnow
 from .repository import (
     get_disruption,
     get_disruptions,
@@ -44,7 +53,7 @@ app.add_middleware(
         "http://127.0.0.1:5173",
     ],
     allow_credentials=True,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -173,3 +182,103 @@ def weather_event(disruption_id: str) -> dict:
     if assessment is None:
         raise not_found("disruption", disruption_id)
     return assessment.standardized_event.to_dict()
+
+
+def _excursion_ids() -> list[str]:
+    ids: list[str] = []
+    for shipment in get_shipments():
+        if not shipment.get("temperature_required"):
+            continue
+        logs = get_temperature_logs(shipment["shipment_id"])
+        if not logs:
+            continue
+        latest = logs[-1]
+        if latest["temperature_c"] < latest["temperature_min"] or latest["temperature_c"] > latest["temperature_max"]:
+            ids.append(shipment["shipment_id"])
+    return ids
+
+
+def _all_impacts() -> list[dict]:
+    impacts: list[dict] = []
+    for disruption in get_disruptions():
+        assessment = weather_agent.assess_disruption(disruption["disruption_id"])
+        if assessment is not None:
+            impacts.extend(impact.to_dict() for impact in assessment.affected_shipments)
+    return impacts
+
+
+@app.get("/api/recommendations", response_model=list[RecommendationResponse])
+def recommendations() -> list[dict]:
+    return build_recommendations(_all_impacts(), get_shipments(), get_idle_vehicles(), _excursion_ids())
+
+
+@app.get("/api/actions", response_model=list[ActionResponse])
+def list_actions() -> list[dict]:
+    return load_state()["actions"]
+
+
+@app.post("/api/actions", response_model=ActionResponse)
+def create_action(payload: ActionCreate) -> dict:
+    if get_shipment(payload.shipment_id) is None:
+        raise not_found("shipment", payload.shipment_id)
+    if payload.vehicle_id and get_vehicle(payload.vehicle_id) is None:
+        raise not_found("vehicle", payload.vehicle_id)
+    state = load_state()
+    action = {
+        "action_id": f"ACT-{len(state['actions']) + 1:03d}",
+        "action_type": payload.action_type,
+        "shipment_id": payload.shipment_id,
+        "vehicle_id": payload.vehicle_id,
+        "recommendation_id": payload.recommendation_id,
+        "note": payload.note,
+        "created_at": _utcnow(),
+        "status": "logged",
+    }
+    state["actions"].append(action)
+    save_state(state)
+    return action
+
+
+@app.get("/api/alerts", response_model=list[AlertResponse])
+def alerts() -> list[dict]:
+    state = load_state()
+    return build_alerts(get_disruptions(), _all_impacts(), _excursion_ids(), state["acked_alerts"])
+
+
+@app.post("/api/alerts/ack", response_model=AlertResponse)
+def ack_alert(payload: AlertAckRequest) -> dict:
+    state = load_state()
+    if payload.alert_id not in state["acked_alerts"]:
+        state["acked_alerts"].append(payload.alert_id)
+        save_state(state)
+    current = build_alerts(get_disruptions(), _all_impacts(), _excursion_ids(), state["acked_alerts"])
+    match = next((a for a in current if a["alert_id"] == payload.alert_id), None)
+    if match is None:
+        raise not_found("alert", payload.alert_id)
+    return match
+
+
+@app.get(
+    "/api/routes/alternatives/{shipment_id}",
+    response_model=AlternativesResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def route_alternatives(shipment_id: str) -> dict:
+    shipment = get_shipment(shipment_id)
+    if shipment is None:
+        raise not_found("shipment", shipment_id)
+    impacts = []
+    for disruption in get_disruptions():
+        impact = weather_agent.assess_shipment_impact(shipment_id, disruption["disruption_id"])
+        if impact is not None:
+            impacts.append(impact.to_dict())
+    return build_alternatives(shipment, impacts, get_disruptions())
+
+
+@app.post("/api/assistant/ask", response_model=AssistantAskResponse)
+def assistant_ask(payload: AssistantAskRequest) -> dict:
+    shipments = get_shipments()
+    impacts = _all_impacts()
+    idle = get_idle_vehicles()
+    excursions = _excursion_ids()
+    return answer_question(payload.question, {"shipments": shipments, "impacts": impacts, "idle": idle, "excursions": excursions})
