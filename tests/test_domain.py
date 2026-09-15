@@ -41,7 +41,7 @@ class DomainModelTests(unittest.TestCase):
                 risk_level=RiskLevel.HIGH,
                 risk_score=1.1,
                 contributing_event_ids=("EVT-1",),
-                rationale="Synthetic test assessment",
+                rationale="Automated test assessment",
             )
 
     def test_standardized_event_serializes_contract_values(self) -> None:

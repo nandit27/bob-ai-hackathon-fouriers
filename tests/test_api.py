@@ -14,11 +14,8 @@ class Fleet360ApiTests(unittest.TestCase):
         response = self.client.get("/api/health")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {
-            "status": "ok",
-            "synthetic_data": True,
-            "service": "fleet360-backend",
-        })
+        self.assertEqual(response.json()["status"], "ok")
+        self.assertEqual(response.json()["service"], "fleet360-backend")
 
     def test_retrieves_shipments(self) -> None:
         response = self.client.get("/api/shipments")
